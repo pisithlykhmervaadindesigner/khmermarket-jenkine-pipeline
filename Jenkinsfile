@@ -13,28 +13,27 @@ pipeline {
         DOCKER_PASSWORD_CREDENTIALS_ID = 'docker-hub-password'  // Your password secret text credential ID
     }
 
-    stage('Clone Repository') {
-                steps {
-                    script {
-                        echo "Cloning repository..."
-                        sh '''
-                            cd /var/lib/jenkins/workspace/khmermarket/khmermarket-pipeline
+    stages {
+        stage('Clone Repository') {
+            steps {
+                script {
+                    echo "Cloning repository..."
+                    sh '''
+                        cd /var/lib/jenkins/workspace/khmermarket/khmermarket-pipeline
 
-                            rm -rf khmermarket-backend-service
+                        rm -rf khmermarket-backend-service
 
-                            git clone https://github.com/pisithlykhmervaadindesigner/khmermarket-backend-service.git
+                        git clone https://github.com/pisithlykhmervaadindesigner/khmermarket-backend-service.git
 
-                            echo "Repository cloned successfully!"
+                        echo "Repository cloned successfully!"
 
-                            cd khmermarket-backend-service
+                        cd khmermarket-backend-service
 
-                            ls -la  # This will show the repository contents
-                        '''
-                    }
+                        ls -la  # This will show the repository contents
+                    '''
                 }
             }
-
-    stages {
+        }
         stage('Build and Push') {
             steps {
                 script {

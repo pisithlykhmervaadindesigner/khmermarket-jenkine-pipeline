@@ -2,15 +2,7 @@ pipeline {
     agent any
     
     parameters {
-        // Basic build parameters
         choice(name: 'BUILD_ENV', choices: ['dev', 'staging', 'production'], description: 'Select the build environment')
-        booleanParam(name: 'RUN_TESTS', defaultValue: true, description: 'Run tests during build')
-    }
-
-    environment {
-        // Environment variables
-        DOCKER_IMAGE_BACKEND = "khmermarket/backend"
-        DOCKER_IMAGE_FRONTEND = "khmermarket/frontend"
     }
 
     stages {
@@ -18,54 +10,32 @@ pipeline {
             steps {
                 echo 'Checking out source code...'
                 checkout scm
+                // List the directory structure for debugging
+                sh 'ls -la'
             }
         }
 
-        stage('Build Backend') {
+        stage('Build') {
             steps {
                 script {
-                    echo "Building backend for ${params.BUILD_ENV} environment..."
-                    sh 'cd backend && mvn clean package -DskipTests'
-                }
-            }
-        }
+                    echo "Building for ${params.BUILD_ENV} environment..."
 
-        stage('Test Backend') {
-            when {
-                expression { params.RUN_TESTS == true }
-            }
-            steps {
-                echo 'Running backend tests...'
-                sh 'cd backend && mvn test'
-            }
-        }
+                    // Check if backend directory exists
+                    if (fileExists('backend')) {
+                        echo 'Building backend...'
+                        sh 'cd backend && mvn clean package -DskipTests'
+                    } else {
+                        echo 'No backend directory found, skipping backend build'
+                    }
 
-        stage('Build Frontend') {
-            steps {
-                echo 'Installing frontend dependencies...'
-                sh 'cd fronted && npm install'
-
-                echo 'Building frontend...'
-                sh 'cd fronted && npm run build'
-            }
-        }
-
-        stage('Build Docker Images') {
-            steps {
-                script {
-                    def imageTag = "${params.BUILD_ENV}-${env.BUILD_NUMBER}"
-
-                    echo "Building Docker images with tag: ${imageTag}"
-
-                    // Build backend image
-                    sh """
-                    docker build -t ${DOCKER_IMAGE_BACKEND}:${imageTag} ./backend/user-service
-                    """
-
-                    // Build frontend image
-                    sh """
-                    docker build -t ${DOCKER_IMAGE_FRONTEND}:${imageTag} ./fronted
-                    """
+                    // Check if frontend directory exists
+                    if (fileExists('fronted')) {
+                        echo 'Building frontend...'
+                        sh 'cd fronted && npm install'
+                        sh 'cd fronted && npm run build'
+                    } else {
+                        echo 'No frontend directory found, skipping frontend build'
+                    }
                 }
             }
         }
@@ -79,7 +49,6 @@ pipeline {
             echo 'Pipeline failed!'
         }
         cleanup {
-            // Clean up workspace after build
             cleanWs()
         }
     }

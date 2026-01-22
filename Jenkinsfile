@@ -80,7 +80,7 @@ pipeline {
 
     post {
         always {
-            echo "Build completed for environment: ${params.BUILD_ENV}"
+            echo "Deployment completed for environment: ${params.BUILD_ENV}"
             sh 'rm -f $HOME/.docker/config.json'
         }
         success {

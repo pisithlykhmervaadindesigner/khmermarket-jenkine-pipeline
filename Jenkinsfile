@@ -36,8 +36,9 @@ pipeline {
                     echo "Repository contents:"
                     sh '''
                         ls -la test-repo
-                        echo "Environment: ${params.BUILD_ENV}"
                     '''
+                    // Access the parameter outside of the shell script
+                    echo "Environment: ${params.BUILD_ENV}"
                 }
             }
         }

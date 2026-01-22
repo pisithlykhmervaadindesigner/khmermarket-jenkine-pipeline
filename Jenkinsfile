@@ -8,9 +8,9 @@ pipeline {
     }
 
     environment {
-        // Reference your existing credentials by their IDs
-        DOCKER_USERNAME_CREDENTIALS_ID = 'docker-hub-username'  // Your username secret text credential ID
-        DOCKER_PASSWORD_CREDENTIALS_ID = 'docker-hub-password'  // Your password secret text credential ID
+        DOCKER_USERNAME_CREDENTIALS_ID = 'docker-hub-username'
+        DOCKER_PASSWORD_CREDENTIALS_ID = 'docker-hub-password'
+        WORKSPACE = '/var/lib/jenkins/workspace/khmermarket/khmermarket-pipeline'
     }
 
     stages {
@@ -19,30 +19,22 @@ pipeline {
                 script {
                     echo "Cloning repository..."
                     sh '''
-                        cd /var/lib/jenkins/workspace/khmermarket/khmermarket-pipeline
-
+                        cd $WORKSPACE
                         rm -rf khmermarket-backend-service
-
                         git clone https://github.com/pisithlykhmervaadindesigner/khmermarket-backend-service.git
-
                         echo "Repository cloned successfully!"
-
-                        cd khmermarket-backend-service
-
-                        ls -la  # This will show the repository contents
                     '''
                 }
             }
         }
+
         stage('Build and Push') {
             steps {
                 script {
-                    // Get both credentials
                     withCredentials([
                         string(credentialsId: env.DOCKER_USERNAME_CREDENTIALS_ID, variable: 'DOCKER_USER'),
                         string(credentialsId: env.DOCKER_PASSWORD_CREDENTIALS_ID, variable: 'DOCKER_PASS')
                     ]) {
-                        // Set the image name with the specified format
                         def imageName = "${DOCKER_USER}/backend-user-service:latest"
 
                         sh """
@@ -50,6 +42,7 @@ pipeline {
                             echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin
 
                             echo "Building Docker image: $imageName"
+                            cd $WORKSPACE/khmermarket-backend-service
                             docker build -f user-service/Dockerfile -t $imageName .
 
                             echo "Pushing to Docker Hub..."
@@ -57,12 +50,23 @@ pipeline {
 
                             echo "Logging out from Docker Hub"
                             docker logout
-
-                            echo "Successfully pushed $imageName"
                         """
                     }
                 }
             }
+        }
+    }
+
+    post {
+        always {
+            echo "Build completed for environment: ${params.BUILD_ENV}"
+            sh 'rm -f $HOME/.docker/config.json'
+        }
+        success {
+            echo "✅ Pipeline succeeded!"
+        }
+        failure {
+            echo "❌ Pipeline failed!"
         }
     }
 }

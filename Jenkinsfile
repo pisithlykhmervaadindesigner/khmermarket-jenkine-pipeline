@@ -7,54 +7,42 @@ pipeline {
                description: 'Select the build environment')
     }
 
-    stages {
-        stage('Check GitHub Connection') {
-            steps {
-                script {
-                    echo "Testing connection to GitHub..."
-                    sh 'curl -I https://github.com'
-                }
-            }
-        }
-
-        stage('Clone Repository') {
-            steps {
-                script {
-                    echo "Cloning repository..."
-                    sh '''
-                        rm -rf test-repo
-                        git clone --depth 1 https://github.com/pisithlykhmervaadindesigner/khmermarket-docker-compose.git test-repo
-                        echo "Repository cloned successfully!"
-                    '''
-                }
-            }
-        }
-
-        stage('List Repository Contents') {
-            steps {
-                script {
-                    echo "Repository contents:"
-                    sh '''
-                        ls -la test-repo
-                    '''
-                    // Access the parameter outside of the shell script
-                    echo "Environment: ${params.BUILD_ENV}"
-                }
-            }
-        }
+    environment {
+        // Reference your existing credentials by their IDs
+        DOCKER_USERNAME_CREDENTIALS_ID = 'docker-hub-username'  // Your username secret text credential ID
+        DOCKER_PASSWORD_CREDENTIALS_ID = 'docker-hub-password'  // Your password secret text credential ID
     }
 
-    post {
-        always {
-            echo "Build completed for environment: ${params.BUILD_ENV}"
-            // Uncomment the next line if you want to clean the workspace
-            // cleanWs()
-        }
-        success {
-            echo "✅ Pipeline succeeded!"
-        }
-        failure {
-            echo "❌ Pipeline failed!"
+    stages {
+        stage('Build and Push') {
+            steps {
+                script {
+                    // Get both credentials
+                    withCredentials([
+                        string(credentialsId: env.DOCKER_USERNAME_CREDENTIALS_ID, variable: 'DOCKER_USER'),
+                        string(credentialsId: env.DOCKER_PASSWORD_CREDENTIALS_ID, variable: 'DOCKER_PASS')
+                    ]) {
+                        // Set the image name with the specified format
+                        def imageName = "${DOCKER_USER}/backend-user-service:latest"
+
+                        sh """
+                            echo "Logging into Docker Hub..."
+                            echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin
+
+                            echo "Building Docker image: $imageName"
+                            docker build -f user-service/Dockerfile -t $imageName .
+
+                            echo "Pushing to Docker Hub..."
+                            docker push $imageName
+
+                            echo "Logging out from Docker Hub"
+                            docker logout
+
+                            echo "Successfully pushed $imageName"
+                        """
+                    }
+                }
+            }
         }
     }
 }

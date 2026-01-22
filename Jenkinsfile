@@ -8,24 +8,18 @@ pipeline {
     }
 
     stages {
-        stage('Checkout') {
-            steps {
-                echo 'Checking out source code...'
-                // For public repository
-                git url: 'https://github.com/pisithlykhmervaadindesigner/khmermarket-docker-compose.git',
-                    branch: 'main'
-
-                // Show repository contents for debugging
-                sh 'ls -la'
-            }
-        }
-
-        stage('Build') {
+        stage('Check Connection') {
             steps {
                 script {
-                    echo "Building for ${params.BUILD_ENV} environment..."
-                    // Add your build commands here
-                    sh 'echo "This is a simple build step"'
+                    // Test basic connectivity
+                    echo "Testing connection to GitHub..."
+                    sh 'curl -I https://github.com'
+                    echo "Trying to clone repository..."
+                    sh '''
+                        rm -rf test-repo
+                        git clone --depth 1 https://github.com/pisithlykhmervaadindesigner/khmermarket-docker-compose.git test-repo || echo "Clone failed"
+                        ls -la test-repo 2>/dev/null || echo "No repository was cloned"
+                    '''
                 }
             }
         }

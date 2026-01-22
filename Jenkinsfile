@@ -93,16 +93,17 @@ pipeline {
             echo "Deployment completed for environment: ${params.BUILD_ENV}"
             sh 'rm -f $HOME/.docker/config.json'
 
-            // Send final status to Telegram
-            def status = currentBuild.result == 'SUCCESS' ? '✅ *SUCCESS*' : '❌ *FAILED*'
-            def message = """
-                *Deployment Status*
-                *Environment:* ${params.BUILD_ENV}
-                *Status:* ${status}
-                *Build Number:* ${env.BUILD_NUMBER}
-                *Build URL:* ${env.BUILD_URL}
-            """
-            notifyTelegram(message)
+            script {
+                def status = currentBuild.result == 'SUCCESS' ? '✅ *SUCCESS*' : '❌ *FAILED*'
+                def message = """
+                    *Deployment Status*
+                    *Environment:* ${params.BUILD_ENV}
+                    *Status:* ${status}
+                    *Build Number:* ${env.BUILD_NUMBER}
+                    *Build URL:* ${env.BUILD_URL}
+                """
+                notifyTelegram(message)
+            }
         }
     }
 }

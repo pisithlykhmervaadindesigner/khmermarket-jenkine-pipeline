@@ -36,7 +36,7 @@ pipeline {
                     echo "Repository contents:"
                     sh '''
                         ls -la test-repo
-                        echo "\nEnvironment: ${params.BUILD_ENV}"
+                        echo "Environment: ${params.BUILD_ENV}"
                     '''
                 }
             }

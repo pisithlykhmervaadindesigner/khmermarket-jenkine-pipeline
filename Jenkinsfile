@@ -55,6 +55,27 @@ pipeline {
                 }
             }
         }
+
+        stage('Deploy') {
+            steps {
+                script {
+                    echo "Deploying to server..."
+                    sh '''
+                        ssh -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/id_rsa deploy@167.71.193.99 '
+
+                            cd khmermarket-docker-compose
+
+                            docker-compose pull
+
+                            docker-compose up -d
+
+                            docker image prune -f
+                         '
+                         echo "Deployed successfully!"
+                    '''
+                }
+            }
+        }
     }
 
     post {
